@@ -1,0 +1,95 @@
+#include <DHTesp.h>
+
+#define DHT_PIN 15
+#define LDR_PIN 34
+#define LED_PIN 2
+
+#define TRIG_PIN 5
+#define ECHO_PIN 18
+
+DHTesp dht;
+
+void setup() {
+
+  Serial.begin(115200);
+
+  dht.setup(DHT_PIN, DHTesp::DHT22);
+
+  pinMode(LED_PIN, OUTPUT);
+
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+}
+
+float readDistanceCM() {
+
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+
+  digitalWrite(TRIG_PIN, LOW);
+
+  long duration = pulseIn(ECHO_PIN, HIGH);
+
+  float distance = duration * 0.034 / 2;
+
+  return distance;
+}
+
+void loop() {
+
+  // DHT22 Reading
+  TempAndHumidity data = dht.getTempAndHumidity();
+
+  Serial.println("===== SMART CITY DATA =====");
+
+  Serial.print("Temperature: ");
+  Serial.print(data.temperature);
+  Serial.println(" °C");
+
+  Serial.print("Humidity: ");
+  Serial.print(data.humidity);
+  Serial.println(" %");
+
+  // LDR Reading
+  int ldrValue = analogRead(LDR_PIN);
+
+  Serial.print("Light Value: ");
+  Serial.println(ldrValue);
+
+  // Smart Street Light
+  if (ldrValue < 2000) {
+
+    digitalWrite(LED_PIN, HIGH);
+    Serial.println("Street Light: ON");
+
+  } else {
+
+    digitalWrite(LED_PIN, LOW);
+    Serial.println("Street Light: OFF");
+  }
+
+  // Ultrasonic Reading
+  float distance = readDistanceCM();
+
+  Serial.print("Garbage Level Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  // Garbage Alert
+  if (distance < 20) {
+
+    Serial.println("Garbage Bin FULL");
+
+  } else {
+
+    Serial.println("Garbage Bin NORMAL");
+  }
+
+  Serial.println("==========================");
+  Serial.println();
+
+  delay(2000);
+}
